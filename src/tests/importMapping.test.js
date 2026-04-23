@@ -47,6 +47,16 @@ describe('mapRowToPatient', () => {
     const p = mapRowToPatient({ name: 'テスト', _facilityRaw: '在宅', _suspendedRaw: null })
     expect(p.status).toBe('active')
   })
+  it('includes all required default fields', () => {
+    const p = mapRowToPatient({ name: 'テスト', _facilityRaw: '在宅', _suspendedRaw: null })
+    expect(p.phone).toBe('')
+    expect(p.addressKarte).toBe('')
+    expect(p.hasLongTermCareInsurance).toBe(true)
+    expect(p.careLevel).toBe('')
+    expect(p.insuranceExpiryDate).toBe('')
+    expect(p.notes).toBe('')
+    expect(p.addressVisitSameAsKarte).toBe(false)
+  })
 })
 
 describe('parsePatientSheet', () => {
@@ -77,5 +87,20 @@ describe('parsePatientSheet', () => {
     ]
     const { patients } = parsePatientSheet(sheetData)
     expect(patients).toHaveLength(0)
+  })
+
+  it('parses multiple rows correctly', () => {
+    const sheetData = [
+      ['№', '氏名', '往診先(施設名・在宅)', '支払い方法', '中断'],
+      [1, '田中 洋子', '在宅', '振込', null],
+      [2, '鈴木 一郎', 'グループホーム渭北', '施設立替', null],
+    ]
+    const { patients, errors } = parsePatientSheet(sheetData)
+    expect(patients).toHaveLength(2)
+    expect(patients[0].name).toBe('田中 洋子')
+    expect(patients[1].name).toBe('鈴木 一郎')
+    expect(patients[1].isFacility).toBe(true)
+    expect(patients[1].facilityName).toBe('グループホーム渭北')
+    expect(errors).toHaveLength(0)
   })
 })
