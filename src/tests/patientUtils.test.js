@@ -88,3 +88,34 @@ describe('getExpiryColorClass', () => {
     expect(getExpiryColorClass('2026-04')).toContain('orange')
   })
 })
+
+describe('getDaysUntilExpiry', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-04-23'))
+  })
+  afterEach(() => vi.useRealTimers())
+
+  it('returns null for null/undefined/empty', () => {
+    expect(getDaysUntilExpiry(null)).toBeNull()
+    expect(getDaysUntilExpiry(undefined)).toBeNull()
+    expect(getDaysUntilExpiry('')).toBeNull()
+  })
+
+  it('returns negative number for expired dates', () => {
+    // 2026-03 → March 31 → already past as of 2026-04-23
+    expect(getDaysUntilExpiry('2026-03')).toBeLessThan(0)
+  })
+
+  it('returns small positive number for dates within 30 days', () => {
+    // 2026-04 → April 30 → 7 days from 2026-04-23
+    const days = getDaysUntilExpiry('2026-04')
+    expect(days).toBeGreaterThanOrEqual(0)
+    expect(days).toBeLessThanOrEqual(30)
+  })
+
+  it('returns large positive number for dates far in the future', () => {
+    // 2026-07 → July 31 → well over 30 days away
+    expect(getDaysUntilExpiry('2026-07')).toBeGreaterThan(30)
+  })
+})
