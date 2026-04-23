@@ -56,7 +56,10 @@ export default function ImportPatients() {
           updatedAt: serverTimestamp(),
         })
         success++
-      } catch { errors++ }
+      } catch (err) {
+        console.error('患者インポートエラー:', err)
+        errors++
+      }
     }
     setImportResult({ success, skipped, errors })
     setStep('done')
