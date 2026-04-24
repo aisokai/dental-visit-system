@@ -135,7 +135,7 @@ export default function PdfExportButton({ type, patient, record }) {
                   <p>送信日： {todayStr}</p>
                   <div className="mt-6">
                     <p className="font-bold text-base">{CLINIC.name}</p>
-                    {CLINIC.postal && <p>{CLINIC.postal} {CLINIC.address}</p>}
+                    {(CLINIC.postal || CLINIC.address) && <p>{CLINIC.postal} {CLINIC.address}</p>}
                     {CLINIC.tel && <p>TEL: {CLINIC.tel}</p>}
                     {CLINIC.fax && <p>FAX: {CLINIC.fax}</p>}
                     <p>担当: {CLINIC.contact}</p>
