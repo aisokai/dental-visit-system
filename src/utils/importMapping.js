@@ -1,9 +1,11 @@
 // src/utils/importMapping.js
+import { format } from 'date-fns'
 
 /** ExcelヘッダーとPatientフィールドのマッピング定義 */
 const COLUMN_MAP = {
   '№': 'chartNumber',
   '氏名': 'name',
+  '初診日': 'firstVisitDate',  // ← 追加
   '往診先(施設名・在宅)': '_facilityRaw',
   '訪問先所在地': 'addressVisit',
   '往診頻度': 'visitSchedule',
@@ -39,8 +41,23 @@ export function mapRowToPatient(row) {
   const facilityRaw = String(row._facilityRaw ?? '').trim()
   const isFacility = facilityRaw !== '' && facilityRaw !== '在宅'
 
+  // Excelの日付セルは数値シリアル値で来ることがあるため変換する
+  let firstVisitDate = ''
+  if (row.firstVisitDate) {
+    const raw = row.firstVisitDate
+    if (typeof raw === 'number') {
+      // Excel シリアル日付（1900-01-00 起算）を "YYYY-MM-DD" に変換
+      const excelEpoch = new Date(1899, 11, 30)
+      const date = new Date(excelEpoch.getTime() + raw * 86400000)
+      firstVisitDate = format(date, 'yyyy-MM-dd')
+    } else {
+      firstVisitDate = String(raw).trim()
+    }
+  }
+
   return {
     chartNumber: String(row.chartNumber ?? '').trim(),
+    firstVisitDate,  // ← 追加
     name: String(row.name ?? '').trim(),
     isFacility,
     facilityName: isFacility ? facilityRaw : '',
