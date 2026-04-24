@@ -1,5 +1,5 @@
 // src/components/datacheck/QualityCheck.jsx
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { runQualityChecks, CHECK_LABELS, CHECK_FIELDS, CHECK_INPUT_TYPES } from '../../utils/checkUtils'
@@ -12,9 +12,7 @@ export default function QualityCheck() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  useEffect(() => { fetchAndCheck() }, [])
-
-  async function fetchAndCheck() {
+  const fetchAndCheck = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
@@ -28,18 +26,24 @@ export default function QualityCheck() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => { fetchAndCheck() }, [fetchAndCheck])
 
   async function handleSave(patientId, field, value) {
-    // 数値フィールドは数値に変換（visitNumberは整数で管理するため）
-    const coerced = field === 'visitNumber' ? (value === '' ? null : Number(value)) : value
+    // NaN ガード: 数値変換できない入力は null として扱う
+    const coerced = field === 'visitNumber'
+      ? (value === '' ? null : (isNaN(Number(value)) ? null : Number(value)))
+      : value
     await updateDoc(doc(db, 'patients', patientId), { [field]: coerced })
-    // ローカルステートを更新して即座に再チェック（UIの応答性を確保）
-    const updated = patients.map(p =>
-      p.id === patientId ? { ...p, [field]: coerced } : p
-    )
-    setPatients(updated)
-    setChecks(runQualityChecks(updated))
+    // コールバック形式で常に最新の patients を参照する（stale closure 回避）
+    setPatients(prev => {
+      const updated = prev.map(p =>
+        p.id === patientId ? { ...p, [field]: coerced } : p
+      )
+      setChecks(runQualityChecks(updated))
+      return updated
+    })
   }
 
   if (loading) return <div className="p-8 text-center text-slate-400">読み込み中...</div>
