@@ -15,12 +15,13 @@ const STATUS_BADGE = {
  * @param {boolean}  props.open
  * @param {object}   props.patient   - { id, name }
  * @param {string}   props.newStatus - 変更先ステータス
- * @param {Function} props.onConfirm - async ({ statusDate, statusReason }) => void
+ * @param {Function} props.onConfirm - async ({ statusDate, statusReason, staffName }) => void
  * @param {Function} props.onCancel
  */
 export function StatusChangeDialog({ open, patient, newStatus, onConfirm, onCancel }) {
   const [statusDate, setStatusDate] = useState('')
   const [statusReason, setStatusReason] = useState('')
+  const [staffName, setStaffName] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
 
@@ -29,6 +30,7 @@ export function StatusChangeDialog({ open, patient, newStatus, onConfirm, onCanc
     if (open) {
       setStatusDate('')
       setStatusReason('')
+      setStaffName('')
       setSaving(false)
       setError(null)
     }
@@ -44,10 +46,14 @@ export function StatusChangeDialog({ open, patient, newStatus, onConfirm, onCanc
       setError('理由を入力してください')
       return
     }
+    if (!staffName.trim()) {
+      setError('変更者名を入力してください')
+      return
+    }
     setSaving(true)
     setError(null)
     try {
-      await onConfirm({ statusDate, statusReason: statusReason.trim() })
+      await onConfirm({ statusDate, statusReason: statusReason.trim(), staffName: staffName.trim() })
     } catch {
       setError('保存に失敗しました')
       setSaving(false)
@@ -109,6 +115,21 @@ export function StatusChangeDialog({ open, patient, newStatus, onConfirm, onCanc
             onChange={e => setStatusReason(e.target.value)}
             placeholder={reasonRequired ? '理由を入力してください' : '（省略可）'}
             className="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+          />
+        </div>
+
+        {/* 変更者名 */}
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-slate-700">
+            変更者名<span className="text-red-500 ml-1">*</span>
+          </label>
+          <input
+            type="text"
+            value={staffName}
+            onChange={e => setStaffName(e.target.value)}
+            placeholder="例：田中衛生士"
+            maxLength={50}
+            className="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </div>
 
