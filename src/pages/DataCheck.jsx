@@ -16,10 +16,12 @@ export default function DataCheck() {
   return (
     <div className="space-y-6">
       {/* タブナビゲーション */}
-      <div className="flex gap-1 border-b border-slate-200">
+      <div role="tablist" className="flex gap-1 border-b border-slate-200">
         {TABS.map(tab => (
           <button
             key={tab.id}
+            role="tab"
+            aria-selected={activeTab === tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={clsx(
               'flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors -mb-px',
