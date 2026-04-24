@@ -5,6 +5,7 @@ import { db } from '../../firebase'
 import { runQualityChecks, CHECK_LABELS, CHECK_FIELDS, CHECK_INPUT_TYPES } from '../../utils/checkUtils'
 import InlineEditCell from './InlineEditCell'
 import { CheckCircle2, AlertTriangle, RefreshCw } from 'lucide-react'
+import { addChangelogEntry, FIELD_LABELS } from '../../utils/changelogUtils'
 
 export default function QualityCheck() {
   const [patients, setPatients] = useState([])
@@ -30,11 +31,13 @@ export default function QualityCheck() {
 
   useEffect(() => { fetchAndCheck() }, [fetchAndCheck])
 
-  async function handleSave(patientId, field, value) {
+  async function handleSave(patientId, field, value, staffName) {
     // NaN ガード: 数値変換できない入力は null として扱う
     const coerced = field === 'visitNumber'
       ? (value === '' ? null : (isNaN(Number(value)) ? null : Number(value)))
       : value
+    // 変更前の値をキャプチャ（changelog に記録するため、coerced 計算後に取得）
+    const oldValue = String(patients.find(p => p.id === patientId)?.[field] ?? '')
     await updateDoc(doc(db, 'patients', patientId), { [field]: coerced })
     // コールバック形式で常に最新の patients を参照する（stale closure 回避）
     setPatients(prev => {
@@ -44,6 +47,17 @@ export default function QualityCheck() {
       setChecks(runQualityChecks(updated))
       return updated
     })
+    // changelog への書き込みは失敗しても主処理に影響させない
+    try {
+      await addChangelogEntry(patientId, staffName, [{
+        field,
+        label: FIELD_LABELS[field] ?? field,
+        oldValue,
+        newValue: String(coerced ?? ''),
+      }])
+    } catch (err) {
+      console.error('changelog write failed:', err)
+    }
   }
 
   if (loading) return <div className="p-8 text-center text-slate-400">読み込み中...</div>
@@ -113,7 +127,7 @@ export default function QualityCheck() {
                       <InlineEditCell
                         value={p[field] != null ? String(p[field]) : ''}
                         type={inputType}
-                        onSave={v => handleSave(p.id, field, v)}
+                        onSave={(v, staffName) => handleSave(p.id, field, v, staffName)}
                         placeholder="クリックして設定"
                       />
                     </td>

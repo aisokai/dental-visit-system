@@ -5,6 +5,7 @@ import { db } from '../../firebase'
 import { getDaysUntilExpiry, getExpiryColorClass } from '../../utils/patientUtils'
 import InlineEditCell from './InlineEditCell'
 import { RefreshCw } from 'lucide-react'
+import { addChangelogEntry, FIELD_LABELS } from '../../utils/changelogUtils'
 
 export default function MonthlyPrepCheck() {
   const [patients, setPatients] = useState([])
@@ -32,9 +33,22 @@ export default function MonthlyPrepCheck() {
 
   useEffect(() => { fetchPatients() }, [fetchPatients])
 
-  async function handleSave(patientId, field, value) {
+  async function handleSave(patientId, field, value, staffName) {
+    // 変更前の値をキャプチャ（changelog に記録するため）
+    const oldValue = String(patients.find(p => p.id === patientId)?.[field] ?? '')
     await updateDoc(doc(db, 'patients', patientId), { [field]: value })
     setPatients(prev => prev.map(p => p.id === patientId ? { ...p, [field]: value } : p))
+    // changelog への書き込みは失敗しても主処理に影響させない
+    try {
+      await addChangelogEntry(patientId, staffName, [{
+        field,
+        label: FIELD_LABELS[field] ?? field,
+        oldValue,
+        newValue: String(value),
+      }])
+    } catch (err) {
+      console.error('changelog write failed:', err)
+    }
   }
 
   if (loading) return <div className="p-8 text-center text-slate-400">読み込み中...</div>
@@ -83,7 +97,7 @@ export default function MonthlyPrepCheck() {
                       <InlineEditCell
                         value={p.insuranceExpiryDate || ''}
                         type="month"
-                        onSave={v => handleSave(p.id, 'insuranceExpiryDate', v)}
+                        onSave={(v, staffName) => handleSave(p.id, 'insuranceExpiryDate', v, staffName)}
                         placeholder="未設定"
                         // 設定済みの場合はカラークラスで表示値を色付けする
                         displayClassName={p.insuranceExpiryDate ? expiryColor : undefined}
@@ -100,7 +114,7 @@ export default function MonthlyPrepCheck() {
                     <InlineEditCell
                       value={p.careLevel || ''}
                       type="text"
-                      onSave={v => handleSave(p.id, 'careLevel', v)}
+                      onSave={(v, staffName) => handleSave(p.id, 'careLevel', v, staffName)}
                       placeholder="未入力"
                     />
                   </td>
@@ -109,7 +123,7 @@ export default function MonthlyPrepCheck() {
                       <InlineEditCell
                         value={p.careManagerFax || ''}
                         type="text"
-                        onSave={v => handleSave(p.id, 'careManagerFax', v)}
+                        onSave={(v, staffName) => handleSave(p.id, 'careManagerFax', v, staffName)}
                         placeholder="未設定"
                       />
                     ) : (
@@ -120,7 +134,7 @@ export default function MonthlyPrepCheck() {
                     <InlineEditCell
                       value={p.visitSchedule || ''}
                       type="text"
-                      onSave={v => handleSave(p.id, 'visitSchedule', v)}
+                      onSave={(v, staffName) => handleSave(p.id, 'visitSchedule', v, staffName)}
                       placeholder="未設定"
                     />
                   </td>
