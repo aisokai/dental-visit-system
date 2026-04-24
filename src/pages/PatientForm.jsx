@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { doc, getDoc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useToast } from '../context/ToastContext'
+import { addChangelogEntry, computeFormDiff } from '../utils/changelogUtils'
 import { ArrowLeft, Save, ChevronDown, ChevronRight } from 'lucide-react'
 
 // 定数定義
@@ -88,6 +89,8 @@ export default function PatientForm() {
   const isEditing = !!id
 
   const [form, setForm] = useState(INITIAL_FORM)
+  const [originalForm, setOriginalForm] = useState(null)
+  const [staffName, setStaffName] = useState('')
   const [loading, setLoading] = useState(isEditing)
   const [saving, setSaving] = useState(false)
   const [open, setOpen] = useState({ basic: true, care: true, cm: false, payment: false, status: false })
@@ -96,7 +99,11 @@ export default function PatientForm() {
     if (!isEditing) return
     getDoc(doc(db, 'patients', id))
       .then(snap => {
-        if (snap.exists()) setForm({ ...INITIAL_FORM, ...snap.data() })
+        if (snap.exists()) {
+          const data = { ...INITIAL_FORM, ...snap.data() }
+          setForm(data)
+          setOriginalForm(data)
+        }
         else { addToast({ message: '患者が見つかりません', type: 'error' }); navigate('/patients') }
       })
       .catch(() => addToast({ message: '読み込みに失敗しました', type: 'error' }))
@@ -117,6 +124,9 @@ export default function PatientForm() {
     if (['ended', 'deceased'].includes(form.status) && !form.statusReason.trim()) {
       addToast({ message: '終了・逝去の場合は変更理由を入力してください', type: 'warning' }); return false
     }
+    if (isEditing && !staffName.trim()) {
+      addToast({ message: '変更者名を入力してください', type: 'warning' }); return false
+    }
     return true
   }
 
@@ -128,6 +138,18 @@ export default function PatientForm() {
       const data = { ...form, updatedAt: serverTimestamp() }
       if (isEditing) {
         await setDoc(doc(db, 'patients', id), data, { merge: true })
+        // 変更されたフィールドのみ changelog に記録
+        if (originalForm) {
+          const changes = computeFormDiff(originalForm, form)
+          if (changes.length > 0) {
+            try {
+              await addChangelogEntry(id, staffName.trim(), changes)
+            } catch (err) {
+              console.error('changelog write failed:', err)
+              addToast({ message: '変更ログの記録に失敗しました', type: 'error' })
+            }
+          }
+        }
       } else {
         data.createdAt = serverTimestamp()
         await addDoc(collection(db, 'patients'), data)
@@ -350,6 +372,23 @@ export default function PatientForm() {
             </div>
           )}
         </div>
+
+        {/* 変更者名（編集時のみ） */}
+        {isEditing && (
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+            <Field label="変更者名" required>
+              <input
+                type="text"
+                value={staffName}
+                onChange={e => setStaffName(e.target.value)}
+                placeholder="例：田中衛生士"
+                maxLength={50}
+                className={inputCls}
+              />
+            </Field>
+            <p className="text-xs text-slate-400 mt-1">変更ログに記録されます</p>
+          </div>
+        )}
 
         {/* 保存ボタン */}
         <div className="flex justify-end gap-3 pt-2 pb-8">
