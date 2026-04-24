@@ -40,7 +40,7 @@ export const FIELD_LABELS = {
  * @param {object} updated  - 変更後のフォームデータ
  * @returns {Array<{field: string, label: string, oldValue: string, newValue: string}>}
  */
-export function computeFormDiff(original, updated) {
+export function computeFormDiff(original = {}, updated = {}) {
   const changes = []
   for (const field of Object.keys(FIELD_LABELS)) {
     const oldVal = String(original[field] ?? '')
@@ -62,6 +62,7 @@ export function computeFormDiff(original, updated) {
  * @param {Array<{field, label, oldValue, newValue}>} changes
  */
 export async function addChangelogEntry(patientId, staffName, changes) {
+  if (!patientId) throw new Error('patientId is required')
   if (changes.length === 0) return
   await addDoc(collection(db, 'patients', patientId, 'changelog'), {
     changedAt: serverTimestamp(),
@@ -78,6 +79,7 @@ export async function addChangelogEntry(patientId, staffName, changes) {
  * @returns {Promise<Array<{id, changedAt, staffName, changes}>>}
  */
 export async function getLatestChangelog(patientId, limitCount = 5) {
+  if (!patientId) throw new Error('patientId is required')
   const snap = await getDocs(
     query(
       collection(db, 'patients', patientId, 'changelog'),
