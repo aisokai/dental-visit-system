@@ -14,6 +14,7 @@ import {
 } from '../utils/patientUtils'
 import { useToast } from '../context/ToastContext'
 import { ConfirmDialog } from '../components/ConfirmDialog'
+import { StatusChangeDialog } from '../components/StatusChangeDialog'
 
 const STATUS_OPTIONS = [
   { value: 'active', label: '継続中' },
@@ -50,6 +51,7 @@ export default function Patients() {
   const [visibleCols, setVisibleCols] = useState(new Set(ALL_COLUMNS.map(c => c.key)))
   const [showColMenu, setShowColMenu] = useState(false)
   const [confirmDialog, setConfirmDialog] = useState(null)
+  const [statusDialog, setStatusDialog] = useState(null) // { patient, newStatus }
 
   // カラムメニュー外クリックで閉じる
   useEffect(() => {
@@ -71,26 +73,23 @@ export default function Patients() {
   }
 
   const handleStatusChange = (patient, newStatus) => {
-    // 終了・逝去は詳細画面で理由入力が必要
-    if (['ended', 'deceased'].includes(newStatus)) {
-      navigate(`/patients/${patient.id}`)
-      return
-    }
-    setConfirmDialog({
-      title: 'ステータス変更',
-      message: `${patient.name} のステータスを「${getStatusLabel(newStatus)}」に変更しますか？`,
-      onConfirm: async () => {
-        try {
-          await updateDoc(doc(db, 'patients', patient.id), { status: newStatus, updatedAt: serverTimestamp() })
-          setPatients(prev => prev.map(p => p.id === patient.id ? { ...p, status: newStatus } : p))
-          addToast({ message: 'ステータスを更新しました', type: 'success' })
-        } catch {
-          addToast({ message: '更新に失敗しました', type: 'error' })
-        }
-        setConfirmDialog(null)
-      },
-      onCancel: () => setConfirmDialog(null),
+    // すべてのステータス変更をダイアログで処理（画面遷移なし）
+    setStatusDialog({ patient, newStatus })
+  }
+
+  const handleStatusConfirm = async ({ statusDate, statusReason }) => {
+    const { patient, newStatus } = statusDialog
+    await updateDoc(doc(db, 'patients', patient.id), {
+      status: newStatus,
+      statusDate: statusDate || '',
+      statusReason: statusReason || '',
+      updatedAt: serverTimestamp(),
     })
+    setPatients(prev => prev.map(p =>
+      p.id === patient.id ? { ...p, status: newStatus, statusDate, statusReason } : p
+    ))
+    addToast({ message: 'ステータスを更新しました', type: 'success' })
+    setStatusDialog(null)
   }
 
   const filtered = useMemo(() => {
@@ -319,6 +318,14 @@ export default function Patients() {
         message={confirmDialog?.message}
         onConfirm={confirmDialog?.onConfirm}
         onCancel={confirmDialog?.onCancel}
+      />
+
+      <StatusChangeDialog
+        open={!!statusDialog}
+        patient={statusDialog?.patient}
+        newStatus={statusDialog?.newStatus}
+        onConfirm={handleStatusConfirm}
+        onCancel={() => setStatusDialog(null)}
       />
     </div>
   )
