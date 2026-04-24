@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { ShieldCheck, FileSpreadsheet, ClipboardList } from 'lucide-react'
 import { clsx } from 'clsx'
@@ -24,6 +24,13 @@ export default function DataCheck() {
     if (isValidTab(activeTabParam)) return activeTabParam
     return 'quality'
   }, [activeTabParam])
+
+  useEffect(() => {
+    if (isValidTab(activeTabParam)) return
+    const next = new URLSearchParams(searchParams)
+    next.set('tab', 'quality')
+    setSearchParams(next, { replace: true })
+  }, [activeTabParam, searchParams, setSearchParams])
 
   const handleChangeTab = (tabId) => {
     const next = new URLSearchParams(searchParams)

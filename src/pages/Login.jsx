@@ -1,17 +1,28 @@
 import { useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { signInWithPopup } from "firebase/auth";
-import { Stethoscope, LogIn } from "lucide-react";
+import { Stethoscope, LogIn, AlertCircle } from "lucide-react";
 import { auth, googleProvider } from "../firebase";
 import { useAuth } from "../context/AuthContext";
+import { FullScreenLoader } from "../components/FullScreenLoader";
+
+function getRedirectPath(locationState) {
+  const from = locationState?.from;
+  if (!from?.pathname) return "/";
+  return `${from.pathname}${from.search || ""}${from.hash || ""}`;
+}
 
 export default function Login() {
-  const { currentUser } = useAuth();
+  const { currentUser, authReady, authError } = useAuth();
   const location = useLocation();
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const redirectPath = location.state?.from?.pathname || "/";
+  const redirectPath = getRedirectPath(location.state);
+
+  if (!authReady) {
+    return <FullScreenLoader message="認証状態を確認しています..." />;
+  }
 
   if (currentUser) {
     return <Navigate to={redirectPath} replace />;
@@ -24,7 +35,11 @@ export default function Login() {
       await signInWithPopup(auth, googleProvider);
     } catch (loginError) {
       console.error("Login failed:", loginError);
-      setError("ログインに失敗しました。時間をおいて再度お試しください。");
+      if (loginError?.code === "auth/popup-closed-by-user") {
+        setError("ログインがキャンセルされました。再度お試しください。");
+      } else {
+        setError("ログインに失敗しました。時間をおいて再度お試しください。");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -40,6 +55,13 @@ export default function Login() {
             <p className="text-sm text-slate-500">訪問歯科 管理システム</p>
           </div>
         </div>
+
+        {authError && (
+          <p className="mb-4 inline-flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            {authError}
+          </p>
+        )}
 
         <button
           type="button"
