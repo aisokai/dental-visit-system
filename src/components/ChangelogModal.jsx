@@ -21,11 +21,20 @@ export function ChangelogModal({ open, patient, onClose }) {
     if (!open || !patient) return
     setLoading(true)
     setError(null)
+    setEntries([])  // 再オープン時にフラッシュを防ぐためリセット
     getLatestChangelog(patient.id)
       .then(setEntries)
       .catch(() => setError('履歴の取得に失敗しました'))
       .finally(() => setLoading(false))
-  }, [open, patient])
+  }, [open, patient?.id])  // patient.id のみで比較（オブジェクト参照の不要な再フェッチを防ぐ）
+
+  // Escape キーでモーダルを閉じる
+  useEffect(() => {
+    if (!open) return
+    const handler = e => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [open, onClose])
 
   if (!open || !patient) return null
 
@@ -35,6 +44,9 @@ export function ChangelogModal({ open, patient, onClose }) {
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="changelog-modal-title"
         className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 space-y-4 max-h-[80vh] overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
@@ -42,7 +54,7 @@ export function ChangelogModal({ open, patient, onClose }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <History className="h-5 w-5 text-slate-600" />
-            <h2 className="text-lg font-semibold text-slate-900">
+            <h2 id="changelog-modal-title" className="text-lg font-semibold text-slate-900">
               {patient.name} の変更ログ
             </h2>
           </div>
@@ -70,11 +82,14 @@ export function ChangelogModal({ open, patient, onClose }) {
             <div className="flex items-center justify-between text-xs">
               <span className="font-medium text-slate-700">
                 {/* changedAt は Firestore Timestamp — toDate() で Date に変換 */}
-                {entry.changedAt ? format(entry.changedAt.toDate(), 'yy/MM/dd HH:mm') : '—'}
+                {entry.changedAt && typeof entry.changedAt.toDate === 'function'
+                  ? format(entry.changedAt.toDate(), 'yy/MM/dd HH:mm')
+                  : '—'}
               </span>
               <span className="text-slate-500">変更者: {entry.staffName}</span>
             </div>
             <ul className="space-y-1">
+              {/* key={i} は entries が再ソート・フィルタされない前提で安全 */}
               {entry.changes.map((c, i) => (
                 <li key={i} className="text-xs text-slate-600">
                   <span className="font-medium text-slate-700">{c.label}</span>
