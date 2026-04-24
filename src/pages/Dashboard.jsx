@@ -71,9 +71,9 @@ export default function Dashboard() {
         return new Date(y, m, 0) <= limit
       })
       .sort((a, b) => {
-        const da = getDaysUntilExpiry(a.insuranceExpiryDate) ?? Infinity
+        const daysA = getDaysUntilExpiry(a.insuranceExpiryDate) ?? Infinity
         const daysB = getDaysUntilExpiry(b.insuranceExpiryDate) ?? Infinity
-        return da - daysB
+        return daysA - daysB
       })
   }, [patients])
 
