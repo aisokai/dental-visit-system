@@ -1,5 +1,5 @@
 // src/pages/MonthlyInput.jsx
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef, Fragment } from 'react'
 import { collection, query, where, getDocs, setDoc, doc, getDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { format } from 'date-fns'
@@ -19,6 +19,9 @@ export default function MonthlyInput() {
   const { addToast } = useToast()
   const [patients, setPatients] = useState([])
   const [records, setRecords] = useState({})
+  // useRef で最新の records を常に参照できるようにする（stale closure 対策）
+  const recordsRef = useRef(records)
+  recordsRef.current = records
   const [monthClosed, setMonthClosed] = useState(false)
   const [yearMonth, setYearMonth] = useState(format(new Date(), 'yyyy-MM'))
   const [loading, setLoading] = useState(true)
@@ -113,9 +116,9 @@ export default function MonthlyInput() {
   }, [])
 
   const handleAmountBlur = useCallback((patientId) => {
-    const record = records[patientId]
+    const record = recordsRef.current[patientId]
     if (record) saveRow(patientId, record)
-  }, [records, saveRow])
+  }, [saveRow])
 
   // 月次締め
   const handleClose = async () => {
@@ -244,7 +247,7 @@ export default function MonthlyInput() {
             </thead>
             <tbody>
               {grouped.map(group => (
-                <>
+                <Fragment key={group.key}>
                   {group.label && (
                     <tr key={`g-${group.key}`} className="bg-slate-100 border-t border-slate-200">
                       <td colSpan={9} className="px-4 py-2 text-xs font-semibold text-slate-600">
@@ -287,6 +290,7 @@ export default function MonthlyInput() {
                             value={record.billingAmount}
                             onChange={e => handleAmountChange(patient.id, e.target.value)}
                             onBlur={() => handleAmountBlur(patient.id)}
+                            disabled={monthClosed}
                             className="w-24 border border-slate-300 rounded-lg py-1 px-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                           />
                         </td>
@@ -297,6 +301,7 @@ export default function MonthlyInput() {
                             type="checkbox"
                             checked={!!record.invoiceIssued}
                             onChange={e => handleChange(patient.id, 'invoiceIssued', e.target.checked)}
+                            disabled={monthClosed}
                             className="h-4 w-4 rounded border-slate-300 text-blue-600 cursor-pointer"
                           />
                         </td>
@@ -308,12 +313,14 @@ export default function MonthlyInput() {
                               type="checkbox"
                               checked={!!record.invoiceDelivered}
                               onChange={e => handleChange(patient.id, 'invoiceDelivered', e.target.checked)}
+                              disabled={monthClosed}
                               className="h-4 w-4 rounded border-slate-300 text-blue-600 cursor-pointer"
                             />
                             {record.invoiceDelivered && (
                               <select
                                 value={record.invoiceDeliveryMethod || ''}
                                 onChange={e => handleChange(patient.id, 'invoiceDeliveryMethod', e.target.value || null)}
+                                disabled={monthClosed}
                                 className="text-xs border border-slate-200 rounded px-1 py-0.5 bg-white focus:outline-none"
                               >
                                 <option value="">方法</option>
@@ -331,6 +338,7 @@ export default function MonthlyInput() {
                             type="checkbox"
                             checked={!!record.receiptIssued}
                             onChange={e => handleChange(patient.id, 'receiptIssued', e.target.checked)}
+                            disabled={monthClosed}
                             className="h-4 w-4 rounded border-slate-300 text-blue-600 cursor-pointer"
                           />
                         </td>
@@ -342,12 +350,14 @@ export default function MonthlyInput() {
                               type="checkbox"
                               checked={!!record.receiptDelivered}
                               onChange={e => handleChange(patient.id, 'receiptDelivered', e.target.checked)}
+                              disabled={monthClosed}
                               className="h-4 w-4 rounded border-slate-300 text-blue-600 cursor-pointer"
                             />
                             {record.receiptDelivered && (
                               <select
                                 value={record.receiptDeliveryMethod || ''}
                                 onChange={e => handleChange(patient.id, 'receiptDeliveryMethod', e.target.value || null)}
+                                disabled={monthClosed}
                                 className="text-xs border border-slate-200 rounded px-1 py-0.5 bg-white focus:outline-none"
                               >
                                 <option value="">方法</option>
@@ -366,6 +376,7 @@ export default function MonthlyInput() {
                               type="checkbox"
                               checked={!!record.faxSent}
                               onChange={e => handleChange(patient.id, 'faxSent', e.target.checked)}
+                              disabled={monthClosed}
                               className="h-4 w-4 rounded border-slate-300 text-blue-600 cursor-pointer"
                             />
                           ) : (
@@ -379,6 +390,7 @@ export default function MonthlyInput() {
                             type="checkbox"
                             checked={!!record.paymentReceived}
                             onChange={e => handleChange(patient.id, 'paymentReceived', e.target.checked)}
+                            disabled={monthClosed}
                             className="h-4 w-4 rounded border-slate-300 text-emerald-600 cursor-pointer"
                           />
                         </td>
@@ -395,7 +407,7 @@ export default function MonthlyInput() {
                       </tr>
                     )
                   })}
-                </>
+                </Fragment>
               ))}
             </tbody>
           </table>
