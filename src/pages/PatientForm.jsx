@@ -103,6 +103,7 @@ export default function PatientForm() {
           const data = { ...INITIAL_FORM, ...snap.data() }
           setForm(data)
           setOriginalForm(data)
+          setStaffName('')
         }
         else { addToast({ message: '患者が見つかりません', type: 'error' }); navigate('/patients') }
       })
