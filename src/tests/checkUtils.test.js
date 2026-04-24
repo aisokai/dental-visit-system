@@ -31,8 +31,9 @@ describe('runQualityChecks', () => {
       { ...BASE, id: 'p1', visitNumber: null },
       { ...BASE, id: 'p2', visitNumber: 1 },
     ]
-    expect(runQualityChecks(patients).A2).toHaveLength(1)
-    expect(runQualityChecks(patients).A2[0].id).toBe('p1')
+    const r = runQualityChecks(patients)
+    expect(r.A2).toHaveLength(1)
+    expect(r.A2[0].id).toBe('p1')
   })
 
   it('A3: visitNumberが重複する患者を両方検出する', () => {

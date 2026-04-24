@@ -3,7 +3,7 @@
  * @param {Array} patients - Firestore patients コレクションのドキュメント配列
  * @returns {{ A1: Array, A2: Array, A3: Array, A4: Array, A5: Array, A6: Array }}
  */
-export function runQualityChecks(patients) {
+export function runQualityChecks(patients = []) {
   // A3用: visitNumber の出現回数をカウント
   const visitNumberCounts = {}
   for (const p of patients) {
