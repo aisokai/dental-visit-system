@@ -1,8 +1,8 @@
 // src/pages/DataCheck.jsx
-// データチェック画面 — タブ骨格のみ。各タブの実装は Task 5〜7 で行う。
 import { useState } from 'react'
 import { ShieldCheck, FileSpreadsheet, ClipboardList } from 'lucide-react'
 import { clsx } from 'clsx'
+import QualityCheck from '../components/datacheck/QualityCheck'
 
 const TABS = [
   { id: 'quality',    label: 'データ品質チェック',  icon: ShieldCheck },
@@ -36,12 +36,9 @@ export default function DataCheck() {
         ))}
       </div>
 
-      {/* プレースホルダー — 後続タスクで実コンポーネントに差し替える */}
-      <div className="p-8 text-center text-slate-400">
-        {activeTab === 'quality'   && 'データ品質チェック（実装予定）'}
-        {activeTab === 'excel'     && 'Excel突合（実装予定）'}
-        {activeTab === 'checklist' && '訪問前チェックリスト（実装予定）'}
-      </div>
+      {activeTab === 'quality' && <QualityCheck />}
+      {activeTab === 'excel' && <div className="p-8 text-center text-slate-400">Excel突合（実装予定）</div>}
+      {activeTab === 'checklist' && <div className="p-8 text-center text-slate-400">訪問前チェックリスト（実装予定）</div>}
     </div>
   )
 }
