@@ -24,6 +24,8 @@ const STATUSES = [
 const INITIAL_FORM = {
   name: '',
   chartNumber: '',
+  firstVisitDate: '',   // 初診日 "YYYY-MM-DD" 形式
+  visitNumber: null,    // 訪問登録番号（スクリプトで自動割り振り）
   phone: '',
   addressKarte: '',
   addressVisit: '',
@@ -148,9 +150,16 @@ export default function PatientForm() {
         <button type="button" onClick={() => navigate(-1)} className="flex items-center text-sm text-slate-500 hover:text-slate-700 transition-colors">
           <ArrowLeft className="mr-1 h-4 w-4" />戻る
         </button>
-        <h1 className="text-2xl font-bold text-slate-900">
-          {isEditing ? '患者情報編集' : '新規患者登録'}
-        </h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-slate-900">
+            {isEditing ? '患者情報編集' : '新規患者登録'}
+          </h1>
+          {isEditing && form.visitNumber != null && (
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800">
+              No.{form.visitNumber}
+            </span>
+          )}
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-3">
@@ -172,6 +181,15 @@ export default function PatientForm() {
               </Field>
               <Field label="電話番号">
                 <input type="tel" name="phone" className={inputCls} value={form.phone} onChange={handle} />
+              </Field>
+              <Field label="初診日">
+                <input
+                  type="date"
+                  name="firstVisitDate"
+                  className={inputCls}
+                  value={form.firstVisitDate}
+                  onChange={handle}
+                />
               </Field>
               <div className="col-span-2">
                 <Field label="カルテ住所（保険請求用）">
