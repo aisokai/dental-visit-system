@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "Roboto", "Outfit", "Helvetica Neue", "Arial Nova",
+    "Nimbus Sans", Arial, sans-serif;
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-secondary-50: #f8fafc;
+  --color-secondary-100: #f1f5f9;
+  --color-secondary-800: #1e293b;
+  --color-secondary-900: #0f172a;
+}
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 font-sans antialiased;
+  }
+}
+
+@media print {
+  /* サイドバー・ヘッダー・コントロール類を非表示 */
+  nav,
+  header,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* メインコンテンツをフル幅に */
+  body {
+    background: white;
+  }
+
+  main {
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* テーブルを印刷向けに調整 */
+  table {
+    font-size: 10pt;
+  }
+
+  /* ページまたぎ対策 */
+  tr {
+    page-break-inside: avoid;
+  }
+}
