@@ -88,7 +88,8 @@ export default function MonthlyInput() {
     setSavingRows(prev => new Set(prev).add(patientId))
     try {
       const toSave = { ...updatedRecord }
-      if (toSave.billingAmount !== '') toSave.billingAmount = Number(toSave.billingAmount)
+      // 空文字は null に変換（Firestore の型混在を防ぐ）
+      toSave.billingAmount = toSave.billingAmount === '' ? null : Number(toSave.billingAmount)
       await setDoc(doc(db, 'monthly_records', docId), toSave, { merge: true })
     } catch {
       addToast({ message: '保存に失敗しました', type: 'error' })
