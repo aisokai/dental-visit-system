@@ -23,11 +23,13 @@ const STATUS_OPTIONS = [
 ]
 
 const ALL_COLUMNS = [
+  { key: 'visitNumber', label: 'No.', sortable: true },
   { key: 'chartNumber', label: 'カルテ番号', sortable: true },
   { key: 'name', label: '氏名', sortable: true },
   { key: 'facilityName', label: '施設 / 居宅', sortable: true },
   { key: 'careLevel', label: '介護度', sortable: true },
   { key: 'insuranceExpiryDate', label: '介護期限', sortable: true },
+  { key: 'firstVisitDate', label: '初診日', sortable: true },
   { key: 'collectionMethod', label: '回収方法', sortable: true },
   { key: 'hasCareManager', label: 'CM', sortable: false },
   { key: 'status', label: 'ステータス', sortable: true },
@@ -43,7 +45,7 @@ export default function Patients() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('active')
   const [groupBy, setGroupBy] = useState('none')
-  const [sortKey, setSortKey] = useState('name')
+  const [sortKey, setSortKey] = useState('visitNumber')
   const [sortDir, setSortDir] = useState('asc')
   const [visibleCols, setVisibleCols] = useState(new Set(ALL_COLUMNS.map(c => c.key)))
   const [showColMenu, setShowColMenu] = useState(false)
@@ -104,6 +106,18 @@ export default function Patients() {
         const da = getDaysUntilExpiry(a.insuranceExpiryDate) ?? 99999
         const db2 = getDaysUntilExpiry(b.insuranceExpiryDate) ?? 99999
         return sortDir === 'asc' ? da - db2 : db2 - da
+      }
+      if (sortKey === 'visitNumber') {
+        // null は末尾
+        const na = a.visitNumber ?? Infinity
+        const nb = b.visitNumber ?? Infinity
+        return sortDir === 'asc' ? na - nb : nb - na
+      }
+      if (sortKey === 'firstVisitDate') {
+        // 空文字・null は末尾
+        const fa = a.firstVisitDate || 'ZZZZ'
+        const fb = b.firstVisitDate || 'ZZZZ'
+        return sortDir === 'asc' ? fa.localeCompare(fb) : fb.localeCompare(fa)
       }
       let va = sortKey === 'collectionMethod' ? getCollectionMethodLabel(a[sortKey]) : (a[sortKey] ?? '')
       let vb = sortKey === 'collectionMethod' ? getCollectionMethodLabel(b[sortKey]) : (b[sortKey] ?? '')
@@ -250,6 +264,13 @@ export default function Patients() {
                         className="border-t border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors"
                         onClick={() => navigate(`/patients/${p.id}`)}
                       >
+                        {visibleCols.has('visitNumber') && (
+                          <td className="px-4 py-3 text-sm">
+                            {p.visitNumber != null
+                              ? <span className="font-mono font-semibold text-blue-700">No.{p.visitNumber}</span>
+                              : <span className="text-slate-300">—</span>}
+                          </td>
+                        )}
                         {visibleCols.has('chartNumber') && <td className="px-4 py-3 text-slate-400 text-xs">{p.chartNumber || '—'}</td>}
                         {visibleCols.has('name') && <td className="px-4 py-3 font-medium text-blue-600">{p.name}</td>}
                         {visibleCols.has('facilityName') && <td className="px-4 py-3 text-slate-600">{p.isFacility ? (p.facilityName || '施設') : '居宅'}</td>}
@@ -259,6 +280,11 @@ export default function Patients() {
                             {p.insuranceExpiryDate || '—'}
                             {getInsuranceExpiryStatus(p.insuranceExpiryDate) === 'expired' && ' ⚠'}
                             {getInsuranceExpiryStatus(p.insuranceExpiryDate) === 'warning' && ' !'}
+                          </td>
+                        )}
+                        {visibleCols.has('firstVisitDate') && (
+                          <td className="px-4 py-3 text-sm text-slate-600">
+                            {p.firstVisitDate || '—'}
                           </td>
                         )}
                         {visibleCols.has('collectionMethod') && <td className="px-4 py-3 text-slate-600">{getCollectionMethodLabel(p.collectionMethod)}</td>}
