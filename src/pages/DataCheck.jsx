@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { ShieldCheck, FileSpreadsheet, ClipboardList } from 'lucide-react'
 import { clsx } from 'clsx'
 import QualityCheck from '../components/datacheck/QualityCheck'
+import ExcelDiff from '../components/datacheck/ExcelDiff'
 
 const TABS = [
   { id: 'quality',    label: 'データ品質チェック',  icon: ShieldCheck },
@@ -37,7 +38,7 @@ export default function DataCheck() {
       </div>
 
       {activeTab === 'quality' && <QualityCheck />}
-      {activeTab === 'excel' && <div className="p-8 text-center text-slate-400">Excel突合（実装予定）</div>}
+      {activeTab === 'excel' && <ExcelDiff />}
       {activeTab === 'checklist' && <div className="p-8 text-center text-slate-400">訪問前チェックリスト（実装予定）</div>}
     </div>
   )
