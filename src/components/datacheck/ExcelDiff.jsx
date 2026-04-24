@@ -1,5 +1,5 @@
 // src/components/datacheck/ExcelDiff.jsx
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { parseExcelDate, computeDiff } from '../../utils/excelDiffUtils'
@@ -10,10 +10,17 @@ export default function ExcelDiff() {
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [applying, setApplying] = useState(new Set())
+  const inputRef = useRef(null)
 
   async function handleFileChange(e) {
     const file = e.target.files[0]
     if (!file) return
+    // ファイルサイズ上限チェック（20MB超はFirestore/Excelパースで問題が起きるため弾く）
+    if (file.size > 20 * 1024 * 1024) {
+      setError('ファイルサイズが大きすぎます（20MB以下にしてください）')
+      return
+    }
     setLoading(true)
     setError(null)
     setResult(null)
@@ -45,19 +52,34 @@ export default function ExcelDiff() {
       setError(err.message || 'ファイルの読み込みに失敗しました')
     } finally {
       setLoading(false)
-      e.target.value = '' // 同じファイルを再選択できるようにリセット
+      // refを使って安全にリセット（e.target はfinallyでは無効になっている場合がある）
+      if (inputRef.current) inputRef.current.value = ''
     }
   }
 
   async function handleApply(firestoreId, diffs) {
+    // 二重押し防止：すでに処理中の場合は早期リターン
+    if (applying.has(firestoreId)) return
+    setApplying(prev => new Set([...prev, firestoreId]))
     const patch = {}
     diffs.forEach(d => { patch[d.field] = d.excelValue })
-    await updateDoc(doc(db, 'patients', firestoreId), patch)
-    // 適用済みの行を除外
-    setResult(prev => ({
-      ...prev,
-      mismatched: prev.mismatched.filter(m => m.firestoreId !== firestoreId),
-    }))
+    try {
+      await updateDoc(doc(db, 'patients', firestoreId), patch)
+      // 適用済みの行を除外
+      setResult(prev => ({
+        ...prev,
+        mismatched: prev.mismatched.filter(m => m.firestoreId !== firestoreId),
+      }))
+    } catch (err) {
+      setError('Firestoreへの書き込みに失敗しました。再試行してください。')
+    } finally {
+      // 処理完了後は applying セットから削除してボタンを再度有効化
+      setApplying(prev => {
+        const next = new Set(prev)
+        next.delete(firestoreId)
+        return next
+      })
+    }
   }
 
   return (
@@ -75,6 +97,7 @@ export default function ExcelDiff() {
             onChange={handleFileChange}
             className="hidden"
             disabled={loading}
+            ref={inputRef}
           />
           <span className={`inline-block px-5 py-2 rounded-lg text-sm font-medium text-white transition-colors ${
             loading ? 'bg-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
@@ -108,7 +131,7 @@ export default function ExcelDiff() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {result.excelOnly.map((p, i) => (
-                    <tr key={i} className="hover:bg-slate-50">
+                    <tr key={p.name} className="hover:bg-slate-50">
                       <td className="px-4 py-2 font-medium text-slate-900">{p.name}</td>
                       <td className="px-4 py-2 text-slate-500 text-sm">{p.firstVisitDate || '—'}</td>
                     </tr>
@@ -162,9 +185,10 @@ export default function ExcelDiff() {
                       <td className="px-4 py-2">
                         <button
                           onClick={() => handleApply(m.firestoreId, m.diffs)}
-                          className="px-3 py-1.5 bg-emerald-600 text-white text-xs rounded-lg hover:bg-emerald-700 transition-colors"
+                          disabled={applying.has(m.firestoreId)}
+                          className="px-3 py-1.5 bg-emerald-600 text-white text-xs rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
                         >
-                          Firestoreに反映
+                          {applying.has(m.firestoreId) ? '反映中...' : 'Firestoreに反映'}
                         </button>
                       </td>
                     </tr>
@@ -185,9 +209,11 @@ function DiffSection({ title, count, color, children }) {
     slate: 'bg-slate-50 border-slate-200 text-slate-700',
     red: 'bg-red-50 border-red-100 text-red-800',
   }
+  // 未知の color が渡された場合は slate にフォールバック
+  const headerClass = headerColors[color] ?? headerColors.slate
   return (
     <section className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-      <div className={`px-5 py-3 border-b font-semibold text-sm ${headerColors[color]}`}>
+      <div className={`px-5 py-3 border-b font-semibold text-sm ${headerClass}`}>
         {title}（{count}件）
       </div>
       <table className="w-full text-sm">{children}</table>
