@@ -327,7 +327,7 @@ export default function Patients() {
                             </select>
                           </td>
                         )}
-                        <td className="px-4 py-3 text-right" onClick={e => e.stopPropagation()}>
+                        <td className="px-4 py-3 text-right whitespace-nowrap" onClick={e => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-3">
                             <button
                               onClick={() => setChangelogPatient(p)}
@@ -338,7 +338,6 @@ export default function Patients() {
                             </button>
                             <Link
                               to={`/patients/${p.id}`}
-                              onClick={e => e.stopPropagation()}
                               className="text-xs text-blue-600 hover:underline"
                             >
                               編集
