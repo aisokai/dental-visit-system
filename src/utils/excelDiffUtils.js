@@ -22,7 +22,10 @@ export function parseExcelDate(raw) {
  *   mismatched: Array<{name: string, firestoreId: string, diffs: Array<{field: string, excelValue: string, firestoreValue: string}>}>
  * }}
  */
-export function computeDiff(excelPatients, firestorePatients) {
+export function computeDiff(excelPatients = [], firestorePatients = []) {
+  // NOTE: 患者名の完全一致で突合する。
+  // 同姓同名患者が複数いる場合は後方のレコードが優先され、前方のレコードは検出されない。
+  // 現在の運用データでは同姓同名は稀なため許容している。
   const firestoreMap = new Map(firestorePatients.map(p => [p.name, p]))
   const excelMap = new Map(excelPatients.map(p => [p.name, p]))
 
@@ -39,7 +42,7 @@ export function computeDiff(excelPatients, firestorePatients) {
       diffs.push({
         field: 'firstVisitDate',
         excelValue: ep.firstVisitDate,
-        firestoreValue: fp.firstVisitDate || '（未設定）',
+        firestoreValue: fp.firstVisitDate ?? '',
       })
     }
     if (diffs.length > 0) {
