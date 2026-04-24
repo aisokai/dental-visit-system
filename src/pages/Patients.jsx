@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { collection, getDocs, query, orderBy, doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase'
 import { Link, useNavigate } from 'react-router-dom'
-import { Plus, Search, Upload, ChevronUp, ChevronDown, SlidersHorizontal } from 'lucide-react'
+import { Plus, Search, Upload, ChevronUp, ChevronDown, SlidersHorizontal, History } from 'lucide-react'
 import {
   getInsuranceExpiryStatus,
   getDaysUntilExpiry,
@@ -15,6 +15,7 @@ import {
 import { useToast } from '../context/ToastContext'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { StatusChangeDialog } from '../components/StatusChangeDialog'
+import { ChangelogModal } from '../components/ChangelogModal'
 import { addChangelogEntry } from '../utils/changelogUtils'
 
 const STATUS_OPTIONS = [
@@ -53,6 +54,7 @@ export default function Patients() {
   const [showColMenu, setShowColMenu] = useState(false)
   const [confirmDialog, setConfirmDialog] = useState(null)
   const [statusDialog, setStatusDialog] = useState(null) // { patient, newStatus }
+  const [changelogPatient, setChangelogPatient] = useState(null)
 
   // カラムメニュー外クリックで閉じる
   useEffect(() => {
@@ -325,8 +327,23 @@ export default function Patients() {
                             </select>
                           </td>
                         )}
-                        <td className="px-4 py-3 text-right">
-                          <Link to={`/patients/${p.id}`} onClick={e => e.stopPropagation()} className="text-xs text-blue-600 hover:underline">編集</Link>
+                        <td className="px-4 py-3 text-right" onClick={e => e.stopPropagation()}>
+                          <div className="flex items-center justify-end gap-3">
+                            <button
+                              onClick={() => setChangelogPatient(p)}
+                              className="text-slate-400 hover:text-slate-600 transition-colors"
+                              title="変更ログを確認"
+                            >
+                              <History className="h-4 w-4" />
+                            </button>
+                            <Link
+                              to={`/patients/${p.id}`}
+                              onClick={e => e.stopPropagation()}
+                              className="text-xs text-blue-600 hover:underline"
+                            >
+                              編集
+                            </Link>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -352,6 +369,12 @@ export default function Patients() {
         newStatus={statusDialog?.newStatus}
         onConfirm={handleStatusConfirm}
         onCancel={() => setStatusDialog(null)}
+      />
+
+      <ChangelogModal
+        open={!!changelogPatient}
+        patient={changelogPatient}
+        onClose={() => setChangelogPatient(null)}
       />
     </div>
   )
