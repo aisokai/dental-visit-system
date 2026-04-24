@@ -79,7 +79,10 @@ export default function Patients() {
   }
 
   const handleStatusConfirm = async ({ statusDate, statusReason, staffName }) => {
-    const { patient, newStatus } = statusDialog
+    // Capture statusDialog before any awaits to avoid stale closure
+    const currentDialog = statusDialog
+    if (!currentDialog) return
+    const { patient, newStatus } = currentDialog
     const oldStatus = patient.status ?? 'active'
     await updateDoc(doc(db, 'patients', patient.id), {
       status: newStatus,
@@ -88,20 +91,25 @@ export default function Patients() {
       updatedAt: serverTimestamp(),
     })
     // ステータス関連フィールドの変更を changelog に記録
-    const changes = [
-      { field: 'status', label: 'ステータス', oldValue: getStatusLabel(oldStatus), newValue: getStatusLabel(newStatus) },
-    ]
+    // Only add status entry if status actually changed
+    const changes = []
+    if (oldStatus !== newStatus) {
+      changes.push({ field: 'status', label: 'ステータス', oldValue: getStatusLabel(oldStatus), newValue: getStatusLabel(newStatus) })
+    }
     if (statusDate) {
       changes.push({ field: 'statusDate', label: 'ステータス変更日', oldValue: patient.statusDate || '', newValue: statusDate })
     }
     if (statusReason) {
       changes.push({ field: 'statusReason', label: 'ステータス変更理由', oldValue: patient.statusReason || '', newValue: statusReason })
     }
-    try {
-      await addChangelogEntry(patient.id, staffName, changes)
-    } catch (err) {
-      console.error('changelog write failed:', err)
-      addToast({ message: '変更ログの記録に失敗しました', type: 'error' })
+    // Only write changelog if there are actual changes
+    if (changes.length > 0) {
+      try {
+        await addChangelogEntry(patient.id, staffName, changes)
+      } catch (err) {
+        console.error('changelog write failed:', err)
+        addToast({ message: '変更ログの記録に失敗しました', type: 'error' })
+      }
     }
     setPatients(prev => prev.map(p =>
       p.id === patient.id ? { ...p, status: newStatus, statusDate, statusReason } : p

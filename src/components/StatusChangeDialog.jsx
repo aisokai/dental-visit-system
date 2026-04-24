@@ -56,12 +56,13 @@ export function StatusChangeDialog({ open, patient, newStatus, onConfirm, onCanc
       await onConfirm({ statusDate, statusReason: statusReason.trim(), staffName: staffName.trim() })
     } catch {
       setError('保存に失敗しました')
+    } finally {
       setSaving(false)
     }
   }
 
   const handleKeyDown = e => {
-    if (e.key === 'Escape') onCancel()
+    if (e.key === 'Escape' && !saving) onCancel()
   }
 
   return (
