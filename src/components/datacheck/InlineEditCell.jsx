@@ -107,6 +107,7 @@ export default function InlineEditCell({ value, type = 'text', onSave, placehold
           onChange={e => setStaffName(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="変更者名"
+          maxLength={50}
           className="border border-slate-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-300 w-28"
         />
         <button
@@ -117,7 +118,7 @@ export default function InlineEditCell({ value, type = 'text', onSave, placehold
           {saving ? '保存中' : '保存'}
         </button>
         <button
-          onClick={() => setEditing(false)}
+          onClick={() => { setEditing(false); setStaffName(''); setSaveError(null) }}
           className="px-2 py-1 bg-slate-200 text-slate-600 text-xs rounded hover:bg-slate-300"
         >
           キャンセル

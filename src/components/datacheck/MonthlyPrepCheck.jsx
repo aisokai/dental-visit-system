@@ -36,18 +36,21 @@ export default function MonthlyPrepCheck() {
   async function handleSave(patientId, field, value, staffName) {
     // 変更前の値をキャプチャ（changelog に記録するため）
     const oldValue = String(patients.find(p => p.id === patientId)?.[field] ?? '')
+    const newValue = String(value)
     await updateDoc(doc(db, 'patients', patientId), { [field]: value })
     setPatients(prev => prev.map(p => p.id === patientId ? { ...p, [field]: value } : p))
-    // changelog への書き込みは失敗しても主処理に影響させない
-    try {
-      await addChangelogEntry(patientId, staffName, [{
-        field,
-        label: FIELD_LABELS[field] ?? field,
-        oldValue,
-        newValue: String(value),
-      }])
-    } catch (err) {
-      console.error('changelog write failed:', err)
+    // 実際に値が変更された場合のみ changelog に記録
+    if (oldValue !== newValue) {
+      try {
+        await addChangelogEntry(patientId, staffName, [{
+          field,
+          label: FIELD_LABELS[field] ?? field,
+          oldValue,
+          newValue,
+        }])
+      } catch (err) {
+        console.error('changelog write failed:', err)
+      }
     }
   }
 
@@ -56,7 +59,7 @@ export default function MonthlyPrepCheck() {
   if (error) return (
     <div className="p-8 text-center">
       <p className="text-red-500 mb-3">{error}</p>
-      <button onClick={fetchPatients} className="flex items-center gap-2 mx-auto px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">
+      <button onClick={fetchPatients} className="flex items-center gap-2 mx-auto px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">
         <RefreshCw className="h-4 w-4" />再試行
       </button>
     </div>

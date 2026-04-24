@@ -38,6 +38,7 @@ export default function QualityCheck() {
       : value
     // 変更前の値をキャプチャ（changelog に記録するため、coerced 計算後に取得）
     const oldValue = String(patients.find(p => p.id === patientId)?.[field] ?? '')
+    const newVal = String(coerced ?? '')
     await updateDoc(doc(db, 'patients', patientId), { [field]: coerced })
     // コールバック形式で常に最新の patients を参照する（stale closure 回避）
     setPatients(prev => {
@@ -47,16 +48,18 @@ export default function QualityCheck() {
       setChecks(runQualityChecks(updated))
       return updated
     })
-    // changelog への書き込みは失敗しても主処理に影響させない
-    try {
-      await addChangelogEntry(patientId, staffName, [{
-        field,
-        label: FIELD_LABELS[field] ?? field,
-        oldValue,
-        newValue: String(coerced ?? ''),
-      }])
-    } catch (err) {
-      console.error('changelog write failed:', err)
+    // 実際に値が変更された場合のみ changelog に記録
+    if (oldValue !== newVal) {
+      try {
+        await addChangelogEntry(patientId, staffName, [{
+          field,
+          label: FIELD_LABELS[field] ?? field,
+          oldValue,
+          newValue: newVal,
+        }])
+      } catch (err) {
+        console.error('changelog write failed:', err)
+      }
     }
   }
 
