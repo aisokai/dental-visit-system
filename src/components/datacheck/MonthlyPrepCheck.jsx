@@ -80,23 +80,18 @@ export default function MonthlyPrepCheck() {
                   </td>
                   <td className="px-3 py-2 text-xs">
                     {p.hasLongTermCareInsurance ? (
-                      p.insuranceExpiryDate ? (
-                        <span className={expiryColor}>
-                          {p.insuranceExpiryDate}
-                          {days != null && (
-                            <span className="block">
-                              {days < 0 ? `${Math.abs(days)}日超過` : `残${days}日`}
-                            </span>
-                          )}
-                        </span>
-                      ) : (
-                        <InlineEditCell
-                          value=""
-                          type="month"
-                          onSave={v => handleSave(p.id, 'insuranceExpiryDate', v)}
-                          placeholder="未設定"
-                        />
-                      )
+                      <InlineEditCell
+                        value={p.insuranceExpiryDate || ''}
+                        type="month"
+                        onSave={v => handleSave(p.id, 'insuranceExpiryDate', v)}
+                        placeholder="未設定"
+                        // 設定済みの場合はカラークラスで表示値を色付けする
+                        displayClassName={p.insuranceExpiryDate ? expiryColor : undefined}
+                        displaySuffix={p.insuranceExpiryDate && days != null
+                          ? (days < 0 ? `　${Math.abs(days)}日超過` : `　残${days}日`)
+                          : undefined
+                        }
+                      />
                     ) : (
                       <span className="text-slate-300">—</span>
                     )}

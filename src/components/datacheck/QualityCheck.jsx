@@ -73,9 +73,17 @@ export default function QualityCheck() {
 
   return (
     <div className="space-y-5">
-      <p className="text-sm text-slate-500">
-        問題のあるフィールドをクリックすると編集できます。保存後は自動で再チェックします。
-      </p>
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-slate-500">
+          問題のあるフィールドをクリックすると編集できます。保存後は自動で再チェックします。
+        </p>
+        <button
+          onClick={fetchAndCheck}
+          className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-600 transition-colors"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />再チェック
+        </button>
+      </div>
       {Object.entries(checks).map(([checkId, problemPatients]) => {
         if (problemPatients.length === 0) return null
         const field = CHECK_FIELDS[checkId]

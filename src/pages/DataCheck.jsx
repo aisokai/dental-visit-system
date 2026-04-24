@@ -17,8 +17,8 @@ export default function DataCheck() {
 
   return (
     <div className="space-y-6">
-      {/* タブナビゲーション */}
-      <div role="tablist" className="flex gap-1 border-b border-slate-200">
+      {/* タブナビゲーション（印刷時は非表示） */}
+      <div role="tablist" className="flex gap-1 border-b border-slate-200 print:hidden">
         {TABS.map(tab => (
           <button
             key={tab.id}

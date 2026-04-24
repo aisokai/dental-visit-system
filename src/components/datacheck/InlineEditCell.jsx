@@ -14,8 +14,10 @@ const COLLECTION_METHOD_OPTIONS = [
  * @param {'text'|'date'|'month'|'number'|'select'} type - input の種類
  * @param {Function} onSave - async (newValue: string) => void
  * @param {string} placeholder - 未設定時のテキスト
+ * @param {string} [displayClassName] - 表示値に適用する追加クラス（色付けなど）
+ * @param {string} [displaySuffix] - 表示値の後に追加するテキスト（残日数など）
  */
-export default function InlineEditCell({ value, type = 'text', onSave, placeholder = '（未設定）' }) {
+export default function InlineEditCell({ value, type = 'text', onSave, placeholder = '（未設定）', displayClassName, displaySuffix }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value ?? '')
   const [saving, setSaving] = useState(false)
@@ -52,7 +54,10 @@ export default function InlineEditCell({ value, type = 'text', onSave, placehold
         className="text-left w-full hover:bg-blue-50 px-2 py-1 rounded transition-colors min-h-[28px]"
       >
         {value ? (
-          <span>{value}</span>
+          <span className={displayClassName}>
+            {value}
+            {displaySuffix && <span className="text-xs">{displaySuffix}</span>}
+          </span>
         ) : (
           <span className="text-slate-400 italic text-xs">{placeholder}</span>
         )}

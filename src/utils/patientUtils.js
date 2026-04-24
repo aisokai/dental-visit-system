@@ -15,7 +15,7 @@ export function getInsuranceExpiryStatus(dateStr) {
   today.setHours(0, 0, 0, 0)
   const daysUntil = differenceInDays(expiry, today)
   if (daysUntil < 0) return 'expired'
-  if (daysUntil <= 30) return 'warning'
+  if (daysUntil <= 60) return 'warning'  // 2ヶ月以内は警告
   return 'ok'
 }
 
