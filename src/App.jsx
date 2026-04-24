@@ -9,6 +9,7 @@ import Patients from "./pages/Patients";
 import PatientForm from "./pages/PatientForm";
 import MonthlyInput from "./pages/MonthlyInput";
 import ImportPatients from "./pages/ImportPatients";
+import DataCheck from "./pages/DataCheck";
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
             <Route path="patients/new" element={<PatientForm />} />
             <Route path="patients/:id" element={<PatientForm />} />
             <Route path="monthly-input" element={<MonthlyInput />} />
+            <Route path="data-check" element={<DataCheck />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
