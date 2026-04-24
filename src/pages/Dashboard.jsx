@@ -12,8 +12,9 @@ export default function Dashboard() {
   const [patients, setPatients] = useState([])
   const [records, setRecords] = useState([])
   const [loading, setLoading] = useState(true)
-  // currentMonthStr はレンダリング中に固定する（useEffect 依存配列用）
-  const currentMonthStr = format(new Date(), 'yyyy-MM')
+  const [error, setError] = useState(null)
+  // useMemo で mount 時の値に固定する（日付をまたいでもリロードまで変わらない）
+  const currentMonthStr = useMemo(() => format(new Date(), 'yyyy-MM'), [])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -27,6 +28,7 @@ export default function Dashboard() {
         setRecords(recordsSnap.docs.map(d => ({ id: d.id, ...d.data() })))
       } catch (err) {
         console.error('ダッシュボードデータ読み込みエラー:', err)
+        setError('データの読み込みに失敗しました。再読み込みしてください。')
       } finally {
         setLoading(false)
       }
@@ -70,8 +72,8 @@ export default function Dashboard() {
       })
       .sort((a, b) => {
         const da = getDaysUntilExpiry(a.insuranceExpiryDate) ?? Infinity
-        const db_ = getDaysUntilExpiry(b.insuranceExpiryDate) ?? Infinity
-        return da - db_
+        const daysB = getDaysUntilExpiry(b.insuranceExpiryDate) ?? Infinity
+        return da - daysB
       })
   }, [patients])
 
@@ -90,6 +92,9 @@ export default function Dashboard() {
     : 0
 
   if (loading) return <div className="p-8 text-center text-slate-400">読み込み中...</div>
+  if (error) return (
+    <div className="p-8 text-center text-red-500">{error}</div>
+  )
 
   return (
     <div className="space-y-6">
