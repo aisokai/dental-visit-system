@@ -8,7 +8,8 @@ import {
   CalendarDays,
   LogOut,
   Stethoscope,
-  ClipboardCheck
+  ClipboardCheck,
+  BookOpen
 } from "lucide-react";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -22,6 +23,7 @@ const navigation = [
   { name: "患者管理", href: "/patients", icon: Users },
   { name: "月次一括入力", href: "/monthly-input", icon: CalendarDays },
   { name: "データチェック", href: "/data-check", icon: ClipboardCheck },
+  { name: "ヘルプ", href: "/help", icon: BookOpen },
 ];
 
 export const Layout = () => {

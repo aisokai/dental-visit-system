@@ -3,7 +3,8 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { collection, getDocs, query, orderBy, doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase'
 import { Link, useNavigate } from 'react-router-dom'
-import { Plus, Search, Upload, ChevronUp, ChevronDown, SlidersHorizontal, History } from 'lucide-react'
+import { Plus, Search, Upload, Download, ChevronUp, ChevronDown, SlidersHorizontal, History } from 'lucide-react'
+import * as XLSX from 'xlsx'
 import {
   getInsuranceExpiryStatus,
   getDaysUntilExpiry,
@@ -55,6 +56,25 @@ export default function Patients() {
   const [confirmDialog, setConfirmDialog] = useState(null)
   const [statusDialog, setStatusDialog] = useState(null) // { patient, newStatus }
   const [changelogPatient, setChangelogPatient] = useState(null)
+    const handleDownloadTemplate = () => {
+    const headers = [[
+      'No.',
+      'カルテ番号',
+      '氏名',
+      '施設 / 居宅',
+      '介護度',
+      '介護期限',
+      '初診日',
+      '回収方法',
+      'CM',
+      'ステータス',
+    ]]
+
+    const ws = XLSX.utils.aoa_to_sheet(headers)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, '患者管理')
+    XLSX.writeFile(wb, '患者管理テンプレート.xlsx')
+  }
 
   // カラムメニュー外クリックで閉じる
   useEffect(() => {
@@ -185,7 +205,13 @@ export default function Patients() {
             onChange={e => setSearchQuery(e.target.value)}
           />
         </div>
-
+        <button
+          onClick={handleDownloadTemplate}
+          className="inline-flex items-center gap-1.5 px-3 py-2 border border-slate-300 rounded-xl text-sm bg-white hover:bg-slate-50 transition-colors"
+        >
+          <Download className="h-4 w-4 text-slate-500" />
+          Excelテンプレート
+        </button>
         <select
           className="border border-slate-300 rounded-xl px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
           value={statusFilter}
